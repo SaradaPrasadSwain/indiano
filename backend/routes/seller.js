@@ -8,45 +8,57 @@ const {sellerMiddleware} = require('../middleware/seller')
 const bcrypt = require('bcrypt')
 
 sellerRouter.post('/signup', async(req, res) => {
-    const name = req.body.name;
-    const email = req.body.email;
-    const password = req.body.password;
-
-    if(!name || !email || !password){
-        return res.status(400).json({message: "All fields are required"});
+    try {
+      const name = req.body.name;
+      const email = req.body.email;
+      const password = req.body.password;
+  
+      if(!name || !email || !password){
+          return res.status(400).json({message: "All fields are required"});
+      }
+  
+      await sellerModel.create({
+          name: name,
+          email: email,
+          password: await bcrypt.hash(password, 5)
+      });
+      res.redirect("/api/v1/seller/signin");
+    } catch (error) {
+      res.status(500).json({
+        message: "inter server error"
+      })
     }
-
-    await sellerModel.create({
-        name: name,
-        email: email,
-        password: await bcrypt.hash(password, 5)
-    });
-    res.redirect("/api/v1/seller/signin");
 })
 
 
 sellerRouter.post('/signin', async(req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-
-  const seller = await sellerModel.findOne({
-    email : email
-  })  
-
-  const hashedPassword = await bcrypt.compare(password, seller.password)
-
-  if(hashedPassword){
-    const token = jwt.sign({id: seller._id}, sellerSecretKey);
-    res.cookie('token', token, {
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+  
+    const seller = await sellerModel.findOne({
+      email : email
+    })  
+  
+    const hashedPassword = await bcrypt.compare(password, seller.password)
+  
+    if(hashedPassword){
+      const token = jwt.sign({id: seller._id}, sellerSecretKey, {expiresIn: '5d'});
+      res.cookie('token', token, {
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      })
+      res.json(token);
+    }
+  
+    else{
+        res.status(404).json({message: "Please check username and password"})
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "internal server error"
     })
-    res.json(token);
-  }
-
-  else{
-      res.status(404).json({message: "Please check username and password"})
   }
 
   
@@ -69,7 +81,7 @@ sellerRouter.post("/product",sellerMiddleware, async function(req, res) {
   
   
   res.json({
-        message: "course Get endpoint",
+        message: "product Get endpoint",
         productId: product._id
     })
 })

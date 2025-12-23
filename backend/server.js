@@ -9,6 +9,9 @@ app.use(cookieParser());
 const { userRouter } = require("./routes/user");
 const { sellerRouter } = require("./routes/seller");
 const { productRouter } = require("./routes/product");
+const { orderRouter } = require("./routes/order");
+const { sellerOrderRouter } = require("./routes/sellerOrder")
+const { paymentRouter } = require("./routes/payment")
 const port =process.env.PORT || 3000;
 const mongoose = require("mongoose");
 mongoose.connect(process.env.mongodbUrl)
@@ -21,8 +24,11 @@ app.get('/', (req, res) => {
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/seller", sellerRouter);
 app.use("/api/v1/product", productRouter);
+app.use("/api/v1/order", orderRouter);
+app.use("/api/v1/sellerorder", sellerOrderRouter);
+app.use("/api/v1/payment", paymentRouter);
 
 app.listen(port, () => {
-    console.log("Hello world");
+    console.log("app is running");
 })
 

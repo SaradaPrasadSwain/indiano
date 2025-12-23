@@ -1,20 +1,29 @@
 const {Router} = require("express");
 const { userMiddleware } = require("../middleware/user")
-const { purchaseModel, productModel } = require("../db")
+const { productModel } = require("../db")
+const Razorpay = require('razorpay')
+const crypto = require('crypto')
+const {razorpayKeyId, razorpayKeySecret} = require("../config")
 const productRouter = Router();
 
-productRouter.post("/purchase",userMiddleware, async function(req, res){
-    const userId = req.userId;
-    const courseId = req.courseId;
 
-    await purchaseModel.create({
-        userId,
-        courseId
-    })
-    res.json({
-        message: "Signup: endpoint"
-    })
-})
+// const razorpay = new Razorpay({
+//     key_id: razorpayKeyId,
+//     key_secret: razorpayKeySecret
+// })
+
+// productRouter.post("/purchase",userMiddleware, async function(req, res){
+//     const userId = req.userId;
+//     const productId = req.body.productId;
+
+//     await purchaseModel.create({
+//         userId,
+//         productId
+//     })
+//     res.json({
+//         message: "purchased successfully"
+//     })
+// })
 
 productRouter.get("/preview", async function(req, res) {
 
