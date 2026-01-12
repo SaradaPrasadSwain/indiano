@@ -3,9 +3,9 @@ const orderRouter = Router();
 const { userMiddleware } = require("../middleware/user");
 const { orderModel, productModel } = require("../db");
 
-orderRouter.post("/create",userMiddleware, async function(req, res){
+orderRouter.post("/create", async function(req, res){
     try {
-        const userId = req.userId;
+        const userId = "6941a6368a90d040118dc315";
         const {productId, quantity } = req.body;
     
         if(!productId) {

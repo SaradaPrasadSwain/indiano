@@ -13,9 +13,9 @@ const razorpay = new Razorpay({
 })
 
 
-paymentRouter.post("/create", userMiddleware, async function(req, res){
+paymentRouter.post("/create",  async function(req, res){
     try {
-        const userId = req.userId
+        const userId = "6941a6368a90d040118dc315"
         const { orderId } = req.body
     
         const order = await orderModel.findOne({
@@ -38,7 +38,7 @@ paymentRouter.post("/create", userMiddleware, async function(req, res){
         const product = await productModel.findById(order.productId);
     
         if (!product){
-            return res.json(404).json({ message: "product not found"})
+            return res.status(404).json({ message: "product not found"})
          }
     
         const razorpayOrderOptions = {
@@ -59,11 +59,23 @@ paymentRouter.post("/create", userMiddleware, async function(req, res){
     
         res.json({
             success: true,
+            key: razorpayKeyId,
             razorpayOrderId: razorpayOrder.id,
             amount: razorpayOrder.amount,
             currency: razorpayOrder.currency,
-            keyId: razorpayKeyId,
-        })
+            order_id: razorpayOrder.id,
+            name: "Indiano",
+            description: product.title,
+            image: product.imageUrl || 'https://toppng.com/uploads/preview/sunscreen-11547061535kwsf3fkhj5.png',
+            prefill: {
+                name: "",
+                email: "",
+                contact: ""
+            },
+            theme: {
+                color: "#3399cc"
+            }
+        });
     } catch (error) {
         res.status(500).json({
             message: "Failed to create Razorpay order"
@@ -77,15 +89,18 @@ paymentRouter.get("/create", userMiddleware, async function(req, res){
         message: "You are in the create payment page"
     })
 })
-paymentRouter.post("/verify-payment", userMiddleware, async function(req, res){
+
+paymentRouter.post("/verify-payment",  async function(req, res){
     try {
-        const userId = req.userId;
+        const userId = "6941a6368a90d040118dc315";
         const {
             razorpay_order_id,
             razorpay_payment_id,
             razorpay_signature,
             orderId
         } = req.body;
+
+        console.log(razorpay_order_id, razorpay_payment_id);
     
         const order = await orderModel.findOne({
             userId: userId,
@@ -108,6 +123,7 @@ paymentRouter.post("/verify-payment", userMiddleware, async function(req, res){
             await order.save();
     
             res.json({
+                success: true,
                 message: "payment verified successfully",
                 order: {
                     orderId: order._id,
@@ -131,6 +147,56 @@ paymentRouter.post("/verify-payment", userMiddleware, async function(req, res){
 
 });
 
+paymentRouter.post("/payment-failed",  async function(req, res){
+    try {
+        const userId = "6941a6368a90d040118dc315";
+        const { orderId, error } = req.body
+    
+        const order = await orderModel.findOne({
+            _id: orderId,
+            userId: userId
+        });
+    
+        order.paymentStatus = 'failed';
+        await order.save();
+        res.json({
+            message: "Payment failure recorded",
+            order: {
+                orderId: order._id,
+                paymentStatus: order.paymentStatus
+            }
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to record payment failure"
+        })
+    }
+})
+
+paymentRouter.get("/status/:orderId", async function(req, res){
+    try {
+        const userId = "6941a6368a90d040118dc315";
+        const { orderId } = req.params;
+    
+        const order = await orderModel.findOne({
+            _id: orderId,
+            userId: userId
+        })
+    
+        res.json({
+            orderId: order._id,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.status,
+            razorpay_order_id: order.razorpay_order_id,
+            razorpay_payment_id: order.razorpay_payment_id
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get payment status",
+            error: error.message
+        })
+    }
+})
 module.exports = {
     paymentRouter: paymentRouter
 }

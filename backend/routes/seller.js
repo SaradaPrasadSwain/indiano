@@ -38,23 +38,38 @@ sellerRouter.post('/signin', async(req, res) => {
   
     const seller = await sellerModel.findOne({
       email : email
-    })  
+    }) 
+    if(!seller){
+      return res.status(404).json({message: "Seller not found"});
+    }
   
     const hashedPassword = await bcrypt.compare(password, seller.password)
   
-    if(hashedPassword){
-      const token = jwt.sign({id: seller._id}, sellerSecretKey, {expiresIn: '5d'});
-      res.cookie('token', token, {
-        httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      })
-      res.json(token);
+    if(!seller.isApproved) {
+      return res.status(403).json({
+        message: "Your account is not approved",
+        approvalStatus: seller.approvalStatus,
+        rejectionReason: seller.rejectionReason
+      });
     }
-  
-    else{
-        res.status(404).json({message: "Please check username and password"})
-    }
+
+    const token = jwt.sign({id: seller._id}, sellerSecretKey);
+    
+    res.cookies('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    })
+    res.json({
+      token,
+      message: "Login Successful",
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        email: seller.email,
+        isApproved: seller.isApproved
+      }
+    });
   } catch (error) {
     res.status(500).json({
       message: "internal server error"

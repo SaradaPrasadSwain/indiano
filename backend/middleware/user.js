@@ -3,7 +3,8 @@ const jwt = require("jsonwebtoken");
 
 function userMiddleware(req, res, next) {   
     try {
-        const token = req.cookies.token;
+        let token = req.cookies.token;
+
         const decodedData = jwt.verify(token, userSecretKey);
         req.userId = decodedData.id;
         next();
