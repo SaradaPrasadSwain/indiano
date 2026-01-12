@@ -1,9 +1,10 @@
 const {Router} = require('express');
-const { adminModel } = require('../db');
+const { adminModel, sellerModel, productModel } = require('../db');
 const adminRouter = Router();
 const bcrypt = require('bcrypt');
 const jwt  = require('jsonwebtoken');
 const user = require('./user');
+const {adminMiddleware} = require('../middleware/admin')
 const { userSecretKey, adminSecretKey, sellerSecretKey } = require('../config');
 
 
@@ -93,6 +94,8 @@ adminRouter.post('/signin', async(req, res) => {
     }
 })
 
+
+
 adminRouter.get('/sellers', async(req, res) => {
     try {
         const  {status} = req.query;
@@ -103,11 +106,28 @@ adminRouter.get('/sellers', async(req, res) => {
     
         res.json({
             message: "Sellers fetched  successfully",
-            count: sellers.length
+            count: sellers.length,
+            sellers: sellers.map(s => ({
+                id: s._id,
+                name: s.name,
+                email: s.email,
+                businessName: s.businessName,
+                phone: s.phone
+            }))
         })
     } catch (error) {
         res.status(500).json({ message: "failed to fetch sellers"})
     }
+})
+
+adminRouter.get('/sellers/:sellerId', adminMiddleware, async(req, res) => {
+    const seller = await sellerModel.findById(req.params.sellerId);
+
+    if(!seller){
+        return res.status(404).json({message: "seller not found"})
+    }
+
+    const products = await productModel.find({creatorId: sellerId});
 })
 
 

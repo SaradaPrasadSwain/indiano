@@ -44,6 +44,9 @@ sellerRouter.post('/signin', async(req, res) => {
     }
   
     const hashedPassword = await bcrypt.compare(password, seller.password)
+    if (!hashedPassword){
+      return res.status(401).json({message: "invalid credentials"});
+    }
   
     if(!seller.isApproved) {
       return res.status(403).json({
