@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { adminSecretKey } = require('../config');
-
+    
 
 function adminMiddleware(req, res, next) {
     try {

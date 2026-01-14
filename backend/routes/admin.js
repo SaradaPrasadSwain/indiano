@@ -96,9 +96,10 @@ adminRouter.post('/signin', async(req, res) => {
 
 
 
-adminRouter.get('/sellers', async(req, res) => {
+adminRouter.get('/sellers', adminMiddleware, async(req, res) => {
     try {
         const  {status} = req.query;
+
     
         const  filter =  status ? {approvalStatus: status }: {};
     
@@ -112,7 +113,9 @@ adminRouter.get('/sellers', async(req, res) => {
                 name: s.name,
                 email: s.email,
                 businessName: s.businessName,
-                phone: s.phone
+                phone: s.phone,
+                approvalStatus: s.approvalStatus,
+                isApproved: s.isApproved
             }))
         })
     } catch (error) {
@@ -120,14 +123,118 @@ adminRouter.get('/sellers', async(req, res) => {
     }
 })
 
-adminRouter.get('/sellers/:sellerId', adminMiddleware, async(req, res) => {
+adminRouter.get('/sellers/:sellerId',  async(req, res) => {
     const seller = await sellerModel.findById(req.params.sellerId);
 
     if(!seller){
         return res.status(404).json({message: "seller not found"})
     }
 
-    const products = await productModel.find({creatorId: sellerId});
+    const products = await productModel.find({creatorId: seller._id});
+    
+    res.json({
+        seller: {
+            id: seller._id,
+            name: seller.name,
+            email: seller.email,
+            approvalStatus: seller.approvalStatus,
+            isApproved: seller.isApproved 
+        }
+    })
+})
+
+adminRouter.put('/sellers/:sellerId/approve',adminMiddleware, async (req, res) => {
+    const adminId = req.userId
+    const sellerId = req.params.sellerId;
+    
+    const seller = await sellerModel.findById(sellerId);
+
+    if(!seller) {
+        return res.status(404).json({ message: "Seller not found"});
+    }
+
+    if(seller.isApproved) {
+        return res.status(400).json({message: "seller already approved"});
+    }
+
+    seller.isApproved = true;
+    seller.approvalStatus = 'approved';
+    seller.approvedBy = adminId;
+    seller.approvedAt = Date.now();
+    seller.rejectionReason = undefined;
+
+    await seller.save();
+
+    res.json({
+        message: "Seller Approved Successfully",
+        seller: {
+            id: seller._id,
+            name: seller.name,
+            email: seller.email,
+            approvalStatus: seller.approvalStatus,
+            approvedBy: seller.approvedBy
+        }
+    })
+})
+
+
+
+
+adminRouter.put('/sellers/:sellerId/reject',adminMiddleware, async(req, res) => {
+    const adminId = req.userId
+    const sellerId = req.params.sellerId;
+    const { reason } = req.body;
+
+    if(!reason) {
+        return res.status(400).json({ message: "Rejection reason is required"})
+    }
+
+    const seller = await sellerModel.findById(sellerId);
+
+    if(!seller){
+        return res.status(404).json({message: "Seller not found"});
+    }
+
+    if(seller.isApproved === false){
+        return res.status(400).json({message: "the seller has already rejected"})
+    }
+    seller.isApproved = false;
+    seller.approvalStatus = 'rejected';
+    seller.rejectedBy = adminId;
+    seller.rejectionReason = reason;
+
+    await seller.save();
+
+    res.json({
+        message: "Seller request rejected",
+        seller: {
+            id: seller._id,
+            name: seller.name,
+            approvalStatus: seller.approvalStatus,
+            rejectionReason: seller.rejectionReason,
+            rejectedBy: seller.rejectedBy
+        }
+    })
+} )
+
+
+adminRouter.get('/products', adminMiddleware, async(req, res) => {
+    try {
+        const {status} = req.query;
+    
+        const filter = status ? {approvalStatus: status} : {};
+    
+        const products = await productModel.find(filter).populate('creatorId', 'name email businessName').sort({createdAt: -1});
+    
+        res.json({
+            message: "product fetched Successfully",
+            count: products.length,
+            products
+        });
+    } catch (error) {
+        res.status(500).json({message: "failed to fetch products"})
+    }
+
 })
 
 

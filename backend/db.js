@@ -25,6 +25,7 @@ const sellerSchema = new Schema({
     gstNumber: String,
     rejectionReason: String,
     approvedBy: ObjectId,
+    rejectedBy: ObjectId,
     approvedAt: Date,
     createdAt: {type: Date, default: Date.now}
 })
@@ -54,7 +55,7 @@ const productSchema = new Schema({
     description: String,
     price: Number,
     imageUrl: String,
-    creatorId: ObjectId,
+    creatorId: {type: ObjectId, ref: 'seller'},
 
     isApproved: {type: Boolean, default: false},
     approvalStatus: {
