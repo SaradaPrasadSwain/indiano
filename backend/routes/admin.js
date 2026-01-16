@@ -1,5 +1,5 @@
 const {Router} = require('express');
-const { adminModel, sellerModel, productModel } = require('../db');
+const { adminModel, sellerModel, productModel, userModel, orderModel } = require('../db');
 const adminRouter = Router();
 const bcrypt = require('bcrypt');
 const jwt  = require('jsonwebtoken');
@@ -237,8 +237,132 @@ adminRouter.get('/products', adminMiddleware, async(req, res) => {
 
 })
 
+adminRouter.get('/products/:productId', adminMiddleware, async(req, res) => {
+    const adminId = req.userId;
+    const productId = req.params.productId;
+    
+
+    const products = await productModel.findById(productId).populate('creatorId', 'name email');
+    res.json(
+        products
+    )
+})
+
+adminRouter.put('/products/:productId/approve', adminMiddleware, async(req, res) => {
+    const adminId = req.userId;
+    const productId = req.params.productId;
+
+    if(product.isApproved){
+        return res.status(400).json({ message: "product is already approved!"})
+    }
+
+    const product = await productModel.findById(productId);
+
+    if(product){
+        product.isApproved = true;
+        product.approvalStatus = "approved";
+        product.approvedBy = adminId;
+        product.approvedAt = Date.now();
+        product.rejectionReason = undefined;
+
+        await product.save();
+
+        res.json({
+            message: "Product approved Successfully",
+            product:{
+                seller: product.creatorId.populate("sellerId"),
+                isApproved: product.isApproved,
+                approvalStatus: product.approvalStatus,
+                ApprovedAt: product.approvedAt
+            }
+        })
+    }else{
+        res.status(500).json({message: "Internal server error"})
+    }
+})
+
+adminRouter.put("/products/:productId/reject", adminMiddleware, async(req, res) => {
+    const adminId = req.userId;
+    const productId = req.params.productId;
+    const { reason } = req.body;
+
+    const product = await productModel.findById(productId);
+
+
+    product.isApproved = false;
+    product.approvalStatus = 'rejected';
+    product.rejectionReason = reason;
+    product.approvedBy= adminId;
+    product.approvedAt = Date.now();
+    product.isActive = false;
+
+    await product.save();
+
+
+    res.json({
+        product,
+        approvalStatus: product.approvalStatus,
+        rejectionReason: product.rejectionReason
+    })
+})
+
+adminRouter.delete("/products/:productId", adminMiddleware, async(req, res) => {
+    try {
+        const productId = req.params.productId;
+    
+        const product = await productModel.findById(productId)
+    
+        product.isActive = false
+        await product.save()
+        res.json({message: "product deleted successfully"})
+    } catch (error) {
+        res.status(500).json({ message: "Failed to delete product", error: error.message})
+    }
+})
+
+adminRouter.get("/dashboard/stats", adminMiddleware, async(req, res) => {
+    try{
+        const totalUsers = await userModel.countDocuments();
+        const totalSellers = await sellerModel.countDocuments();
+        const pendingSellers = await sellerModel.countDocuments({approvalStatus: 'pending'});;
+        const approvedSellers = await sellerModel.countDocuments({approvalStatus: 'approved'});
+
+        const totalProducts = await productModel.countDocuments();
+        const pendingProducts = await productModel.countDocuments({approvalStatus: 'pending'})
+        const approvedProducts = await productModel.countDocuments({approvalStatus: 'approved'})
+
+        const totalOrders = await orderModel.countDocuments();
+        const completeOrders = await orderModel.countDocuments({status: 'complete'}) 
+        const pendingOrders = await orderModel.countDocuments({ status: 'pending'})
+
+        res.json({
+            users: {
+                total: totalUsers
+            },
+            sellers: {
+                total: totalSellers,
+                pending: pendingSellers,
+                approved: approvedSellers,
+            },
+
+            products: {
+                total: totalProducts,
+                pending: pendingProducts,
+                approved: approvedProducts,
+            },
+            orders: {
+                total: totalOrders,
+                complete: completeOrders,
+                pending: pendingOrders
+            }
+        })
+
+    }
+})
 
 module.exports = {
     adminRouter: adminRouter
 }
+
+
 
