@@ -321,42 +321,73 @@ adminRouter.delete("/products/:productId", adminMiddleware, async(req, res) => {
 })
 
 adminRouter.get("/dashboard/stats", adminMiddleware, async(req, res) => {
-    try{
-        const totalUsers = await userModel.countDocuments();
-        const totalSellers = await sellerModel.countDocuments();
-        const pendingSellers = await sellerModel.countDocuments({approvalStatus: 'pending'});;
-        const approvedSellers = await sellerModel.countDocuments({approvalStatus: 'approved'});
+    
+        try {
+            const totalUsers = await userModel.countDocuments();
+            const totalSellers = await sellerModel.countDocuments();
+            const pendingSellers = await sellerModel.countDocuments({approvalStatus: 'pending'});;
+            const approvedSellers = await sellerModel.countDocuments({approvalStatus: 'approved'});
+    
+            const totalProducts = await productModel.countDocuments();
+            const pendingProducts = await productModel.countDocuments({approvalStatus: 'pending'})
+            const approvedProducts = await productModel.countDocuments({approvalStatus: 'approved'})
+    
+            const totalOrders = await orderModel.countDocuments();
+            const completeOrders = await orderModel.countDocuments({status: 'complete'}) 
+            const pendingOrders = await orderModel.countDocuments({ status: 'pending'})
+    
+            res.json({
+                users: {
+                    total: totalUsers
+                },
+                sellers: {
+                    total: totalSellers,
+                    pending: pendingSellers,
+                    approved: approvedSellers,
+                },
+    
+                products: {
+                    total: totalProducts,
+                    pending: pendingProducts,
+                    approved: approvedProducts,
+                },
+                orders: {
+                    total: totalOrders,
+                    complete: completeOrders,
+                    pending: pendingOrders
+                }
+            })
+        } catch (error) {
+            res.status(403).json({ message: "can't fetch the dashboard details"})
+        }
+})
 
-        const totalProducts = await productModel.countDocuments();
-        const pendingProducts = await productModel.countDocuments({approvalStatus: 'pending'})
-        const approvedProducts = await productModel.countDocuments({approvalStatus: 'approved'})
-
-        const totalOrders = await orderModel.countDocuments();
-        const completeOrders = await orderModel.countDocuments({status: 'complete'}) 
-        const pendingOrders = await orderModel.countDocuments({ status: 'pending'})
-
+adminRouter.get("/dashboard/recent", adminMiddleware, async(req, res) => {
+    try {
+        const recentSellers = await sellerModel.find()
+            .sort({ createdAt: -1})
+            .limit(5)
+            .select('name email approvalStatus createdAt');
+    
+        const recentProducts = await productModel.find()
+            .sort({ createdAt: -1})
+            .limit(5)
+            .select('title approvalStatus createdAt');
+    
+        const recentOrders = await orderModel.find()
+            .sort({ orderDate: -1 })
+            .limit(5)
+            .select('totalAmount status paymentStatus orderDate');
+    
+    
+    
         res.json({
-            users: {
-                total: totalUsers
-            },
-            sellers: {
-                total: totalSellers,
-                pending: pendingSellers,
-                approved: approvedSellers,
-            },
-
-            products: {
-                total: totalProducts,
-                pending: pendingProducts,
-                approved: approvedProducts,
-            },
-            orders: {
-                total: totalOrders,
-                complete: completeOrders,
-                pending: pendingOrders
-            }
+            recentSellers,
+            recentProducts,
+            recentOrders
         })
-
+    } catch (error) {
+        // res.status(500).json({ message: 'failed to fetch recent Activity'})
     }
 })
 
