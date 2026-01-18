@@ -5,7 +5,7 @@ const { orderModel, productModel } = require("../db");
 
 orderRouter.post("/create", async function(req, res){
     try {
-        const userId = "6941a6368a90d040118dc315";
+        const userId = req.userId;
         const {productId, quantity } = req.body;
     
         if(!productId) {

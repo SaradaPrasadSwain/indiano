@@ -15,7 +15,7 @@ const razorpay = new Razorpay({
 
 paymentRouter.post("/create",  async function(req, res){
     try {
-        const userId = "6941a6368a90d040118dc315"
+        const userId = "696d214dadd7f4d7ac393cc0"
         const { orderId } = req.body
     
         const order = await orderModel.findOne({
@@ -84,11 +84,6 @@ paymentRouter.post("/create",  async function(req, res){
 })
 
 
-paymentRouter.get("/create", userMiddleware, async function(req, res){
-    res.json({
-        message: "You are in the create payment page"
-    })
-})
 
 paymentRouter.post("/verify-payment",  async function(req, res){
     try {

@@ -88,19 +88,29 @@ sellerRouter.post("/product",sellerMiddleware, async function(req, res) {
   const sellerId = req.userId ;
   const {title, description, imageUrl, price} = req.body;
 
+  const seller = await sellerModel.findById(sellerId);
+  if(!seller.isApproved){
+    return res.status(403).json({
+      message: "Your seller account must be approved before adding products"
+    })
+  }
+
   const product = await productModel.create(
     {
     title: title,
     description: description,
     imageUrl: imageUrl,
     price: price,
-    creatorId: sellerId
+    creatorId: sellerId,
+    isApproved: false,
+    approvalStatus: 'pending'
   })
   
   
   res.json({
         message: "product Get endpoint",
-        productId: product._id
+        productId: product._id,
+        approvalStatus: product.approvalStatus
     })
 })
 
@@ -124,7 +134,8 @@ sellerRouter.put("/product", sellerMiddleware, async function(req, res) {
   
   res.json({
         message: "product updated",
-        productId: product._id
+        productId: product._id,
+        products: product.populate('productId', 'title price approvalStatus' )
     })
 })
 

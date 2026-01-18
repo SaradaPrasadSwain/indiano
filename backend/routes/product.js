@@ -27,10 +27,17 @@ const productRouter = Router();
 
 productRouter.get("/preview", async function(req, res) {
 
-    const products = await productModel.find({});
-    res.json({
-        products   
-    })
+    try {
+        const products = await productModel.find({
+            isApproved: true,
+            isActive: true
+        });
+        res.json({
+            products   
+        })
+    } catch (error) {
+        res.status(500).json({message: "Failed to fetch products"});
+    }
 })
 
 module.exports = {

@@ -252,11 +252,16 @@ adminRouter.put('/products/:productId/approve', adminMiddleware, async(req, res)
     const adminId = req.userId;
     const productId = req.params.productId;
 
+    const product = await productModel.findById(productId);
+
+    if(!product){
+        return res.status(404).json({ message: "product not found!"})
+    }
+
     if(product.isApproved){
         return res.status(400).json({ message: "product is already approved!"})
     }
 
-    const product = await productModel.findById(productId);
 
     if(product){
         product.isApproved = true;
@@ -270,7 +275,7 @@ adminRouter.put('/products/:productId/approve', adminMiddleware, async(req, res)
         res.json({
             message: "Product approved Successfully",
             product:{
-                seller: product.creatorId.populate("sellerId"),
+                seller: await product.populate('creatorId', 'name, email'),
                 isApproved: product.isApproved,
                 approvalStatus: product.approvalStatus,
                 ApprovedAt: product.approvedAt
@@ -387,9 +392,11 @@ adminRouter.get("/dashboard/recent", adminMiddleware, async(req, res) => {
             recentOrders
         })
     } catch (error) {
-        // res.status(500).json({ message: 'failed to fetch recent Activity'})
+        res.status(500).json({ message: 'failed to fetch recent Activity'})
     }
 })
+
+
 
 module.exports = {
     adminRouter: adminRouter
