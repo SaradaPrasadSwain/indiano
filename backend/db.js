@@ -5,7 +5,10 @@ const Schema = mongoose.Schema;
 const userSchema = new Schema({
     name: String,
     email: {type: String, unique: true},
-    password: String
+    password: String,
+    isEmailVerified: { type: Boolean, default: false},
+    emailOtp: String,
+    otpExpires: Date
 })
 
 const sellerSchema = new Schema({

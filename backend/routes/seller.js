@@ -6,9 +6,27 @@ const jwt = require('jsonwebtoken');
 const { sellerSecretKey } = require('../config')
 const {sellerMiddleware} = require('../middleware/seller')
 const bcrypt = require('bcrypt')
+const { z } = require('zod');
 
 sellerRouter.post('/signup', async(req, res) => {
     try {
+
+      const zodBody = z.object({
+        name: z.string().min(3).max(100),
+        email: z.string().min(3).max(100).email(),
+        password: z.string().min(3).max(100)
+      })
+      
+      const parsedDataWithSuccess = zodBody.safeParse(req.body);
+
+      if(!parsedDataWithSuccess.success){
+        res.json({
+          message: "Invalid creadentials",
+        })
+        return
+      }
+
+      
       const name = req.body.name;
       const email = req.body.email;
       const password = req.body.password;
@@ -20,7 +38,7 @@ sellerRouter.post('/signup', async(req, res) => {
       await sellerModel.create({
           name: name,
           email: email,
-          password: await bcrypt.hash(password, 5)
+          password: await bcrypt.hash(password, 12)
       });
       res.redirect("/api/v1/seller/signin");
     } catch (error) {
@@ -58,7 +76,7 @@ sellerRouter.post('/signin', async(req, res) => {
 
     const token = jwt.sign({id: seller._id}, sellerSecretKey);
     
-    res.cookies('token', token, {
+    res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'

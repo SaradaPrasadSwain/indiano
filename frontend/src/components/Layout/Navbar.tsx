@@ -38,7 +38,7 @@ const Navbar = () => {
             <Link to='/profile'>
               <IconUserCircle />
             </Link>
-            <Link to="/kart">
+            <Link to="/cart">
               <IconShoppingCart />
             </Link>
           </div>

@@ -1,11 +1,12 @@
 import React from "react"
 
 
+import { BrowserRouter, Routes, Route, Link, Outlet } from "react-router-dom"
 import Navbar from "./components/Layout/Navbar"
 import Footer from "./components/Layout/Footer"
 import Home from "./components/Pages/Home"
-
-import { BrowserRouter, Routes, Route, Link, Outlet } from "react-router-dom"
+import Profile from "./components/Pages/Profile"
+import Cart from "./components/Pages/Cart"
 // import CheckOutButton from "./components/CheckOutButton"
 
 
@@ -18,7 +19,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout/>}>
             <Route path="/" element={<Home/>} />
-            
+            <Route path="/profile" element={<Profile/>}/>
+            <Route path="/cart" element={<Cart/>}/>
           </Route>
         </Routes>
       

@@ -6,11 +6,26 @@ const jwt  = require('jsonwebtoken');
 const user = require('./user');
 const {adminMiddleware} = require('../middleware/admin')
 const { userSecretKey, adminSecretKey, sellerSecretKey } = require('../config');
+const { z } = require('zod');
 
 
 
 adminRouter.post('/signup', async(req, res) => {
     try {
+        const zodBody = z.object({
+            name: z.string().min(3).max(100),
+            email: z.string().min(3).max(100).email(),
+            password: z.string().min(3).max(100)
+        })
+
+        const parsedDataWithSuccess = zodBody.safeParse(req.body);
+    
+        if(!parsedDataWithSuccess.success){
+        res.json({
+            message: "Invalid creadentials",
+        })
+        return
+        }
         const {name, email, password, secretCode} = req.body;
     
         if(secretCode !== process.env.ADMIN_SECRET_CODE){
